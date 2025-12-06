@@ -1,0 +1,27 @@
+{
+  "name": "filmreader",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.4.2",
+    "next": "15.5.3",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-intersection-observer": "^10.0.0",
+    "three": "^0.181.2"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.3",
+    "tailwindcss": "^4"
+  }
+}
