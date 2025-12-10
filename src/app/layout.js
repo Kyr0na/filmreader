@@ -63,7 +63,7 @@ export default function RootLayout({ children }) {
               <p className='text-emerald-500 text-lg sm:text-xl font-medium mb-3 sm:mb-4'><b>Контакты</b></p>
               <ul className='list-none space-y-2'>
                 <li>
-                  <a href='mailto:example@example.com'
+                  <a href='mailto:korzhenkovanton322@yandex.ru'
                     className='flex items-center gap-2 hover:text-emerald-400 transition-colors duration-200'>
                     <span className='w-2 h-2 bg-emerald-500 rounded-full'></span>
                     Email
