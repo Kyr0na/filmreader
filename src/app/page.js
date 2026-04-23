@@ -112,7 +112,7 @@ export default function Home() {
       <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-sm border border-white/20 p-4 sm:p-6 md:p-8">
         <Simple3DModel />
         <div className="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 text-white/60 text-sm sm:text-base">
-          🔥 Интерактивная 3D модель
+          Интерактивная 3D модель
         </div>
       </div>
     </div>

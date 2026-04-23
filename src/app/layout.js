@@ -14,13 +14,13 @@ export default function RootLayout({ children }) {
     <html lang="en" className={`${myFont.className}`}>
             <body className='bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-600 min-h-screen min-w-full flex flex-col items-center'>
         {/* Header - исправлен для адаптивности */}
-        <header className='w-full max-w-7xl px-4 sm:px-6 lg:px-8 h-14 flex backdrop-blur-lg bg-white/20 border mx-auto mt-4 sm:mt-8
-          border-white/30 rounded-full justify-center sm:justify-around items-center gap-2 sm:gap-4 fixed top-0 left-1/2 -translate-x-1/2 
+        <header className='w-full max-w-7xl px-4 sm:px-6 lg:px-8 h-14 flex bg-blue-600 shadow-2xl mx-auto mt-4 sm:mt-8
+         rounded-full justify-center sm:justify-around items-center gap-2 sm:gap-4 fixed top-0 left-1/2 -translate-x-1/2
           text-white text-lg sm:text-xl lg:text-2xl tracking-wide z-50'>
           <Link href='/' className='mx-2 sm:mx-3 px-2 py-1 hover:bg-white/10 rounded-lg transition-all'>Home</Link>
-          <Link href='/' className='mx-2 sm:mx-3 px-2 py-1 hover:bg-white/10 rounded-lg transition-all'>About</Link>
-          <Link href='/' className='mx-2 sm:mx-3 px-2 py-1 hover:bg-white/10 rounded-lg transition-all'>Work</Link>
-          <Link href='/' className='mx-2 sm:mx-3 px-2 py-1 hover:bg-white/10 rounded-lg transition-all'>Contact</Link>
+          <Link href='/about' className='mx-2 sm:mx-3 px-2 py-1 hover:bg-white/10 rounded-lg transition-all'>About</Link>
+          <Link href='/work' className='mx-2 sm:mx-3 px-2 py-1 hover:bg-white/10 rounded-lg transition-all'>Work</Link>
+          <Link href='/contact' className='mx-2 sm:mx-3 px-2 py-1 hover:bg-white/10 rounded-lg transition-all'>Contact</Link>
         </header>
 
         {/* Main content - добавлен отступ сверху для фиксированного хедера */}
@@ -33,7 +33,7 @@ export default function RootLayout({ children }) {
           <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
             {/* Блок с копирайтом */}
             <div className='text-white'>
-              <p className='text-emerald-500 text-lg sm:text-xl font-medium'>© 2025 Korz dev</p>
+              <p className='text-emerald-500 text-lg sm:text-xl font-medium'>© 2026 Korz dev</p>
               <p className='text-white/80 text-sm mt-2'>Разработка современных веб-приложений</p>
             </div>
 
