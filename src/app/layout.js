@@ -81,7 +81,7 @@ export default function RootLayout({ children }) {
           
           {/* Мобильная версия футера (альтернативная) */}
           <div className='block md:hidden text-center text-white/70 text-sm mt-4'>
-            <p>© 2025 Korz dev. Все права защищены.</p>
+            <p>© 2026 Korz dev. Все права защищены.</p>
           </div>
         </footer>
       </body>
