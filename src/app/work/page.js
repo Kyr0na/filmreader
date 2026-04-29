@@ -1,108 +1,140 @@
 // src/app/projects/page.js
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function ProjectsPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [repos, setRepos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const projects = [
-    {
-      id: 1,
-      title: 'Название вашего проекта 1',
-      shortDescription: 'Краткое описание в одну-две строки, что это за проект',
-      fullDescription: 'Подробное описание проекта. Расскажите, какую задачу решали, какие технологии использовали, с какими сложностями столкнулись и чему научились. Это покажут при нажатии на кнопку "Подробнее".',
-      category: 'fullstack', // frontend, backend, fullstack, design, cms
-      technologies: ['React', 'Next.js', 'Tailwind CSS', 'Node.js'],
-      image: '/projects/project1.jpg', // Положите картинку в папку public/projects/
-      demoLink: null, // Если есть
-      githubLink: null, // Если есть
-      year: '2024',
-      featured: false, // Отмеченные проекты будут подсвечены
-    },
-    {
-      id: 2,
-      title: 'Сайт на CMS Joomla',
-      shortDescription: 'Корпоративный сайт для школы с личным кабинетом',
-      fullDescription: 'Разработал полнофункциональный сайт для МОБУ СОШ №9. Реализовал: новостную ленту, расписание уроков, галерею, обратную связь. Интегрировал систему управления контентом, чтобы учителя могли сами обновлять информацию.',
-      category: 'cms',
-      technologies: ['Joomla', 'PHP', 'JavaScript', 'MySQL', 'HTML5/CSS3'],
-      image: null,
-      demoLink: null,
-      githubLink: null,
-      year: '2024',
-      featured: false,
-    },
-    {
-      id: 3,
-      title: 'Todo App на React',
-      shortDescription: 'Приложение для управления задачами',
-      fullDescription: 'Создал современное приложение для заметок и задач. Реализовал: добавление/удаление задач, фильтрацию по статусу, поиск, сохранение в localStorage. Использовал Hooks, Context API для управления состоянием.',
-      category: 'frontend',
-      technologies: ['React', 'JavaScript', 'CSS Modules', 'LocalStorage'],
-      image: null,
-      demoLink: null,
-      githubLink: null,
-      year: '2024',
-      featured: false,
-    },
-    {
-      id: 4,
-      title: 'Адаптивный лендинг',
-      shortDescription: 'Современный одностраничный сайт',
-      fullDescription: 'Разработал адаптивный лендинг для компании. Полностью адаптивен под все устройства, оптимизирован для SEO, имеет анимации и плавный скролл. Скорость загрузки 95+ по Google Lighthouse.',
-      category: 'frontend',
-      technologies: ['HTML5', 'CSS3', 'JavaScript', 'GSAP'],
-      image: null,
-      demoLink: null,
-      githubLink: null,
-      year: '2023',
-      featured: false,
-    },
-    {
-      id: 5,
-      title: 'API для интернет-магазина',
-      shortDescription: 'REST API на Node.js',
-      fullDescription: 'Разработал бэкенд для интернет-магазина. Включает: авторизацию JWT, CRUD операции, корзину, обработку платежей. Документировал API с помощью Swagger.',
-      category: 'backend',
-      technologies: ['Node.js', 'Express', 'PostgreSQL', 'JWT', 'Swagger'],
-      image: null,
-      demoLink: null,
-      githubLink: null,
-      year: '2024',
-      featured: false,
-    },
-    {
-      id: 6,
-      title: 'Чат-приложение',
-      shortDescription: 'Real-time чат с комнатами',
-      fullDescription: 'Создал полноценное чат-приложение с комнатами и личными сообщениями. Использовал WebSockets для real-time обновлений. Реализовал: отправку изображений, уведомления, статус "печатает".',
-      category: 'fullstack',
-      technologies: ['React', 'Socket.io', 'Node.js', 'MongoDB'],
-      image: null,
-      demoLink: null,
-      githubLink: null,
-      year: '2024',
-      featured: false,
-    },
-  ];
+  // Настройки GitHub
+  const GITHUB_USERNAME = 'Kyr0na'; // Замените на ваш GitHub username
+  const GITHUB_TOKEN = process.env.NEXT_PUBLIC_GITHUB_TOKEN; // Опционально, для больших лимитов
+
+  // Функция для определения категории проекта по технологиям и названию
+  const getProjectCategory = (repo) => {
+    const name = repo.name.toLowerCase();
+    const topics = repo.topics || [];
+    const language = repo.language || '';
+    
+    // Анализируем язык и темы
+    if (language === 'PHP' || topics.includes('cms') || name.includes('joomla') || name.includes('wordpress')) {
+      return 'cms';
+    } else if (language === 'Python' && (name.includes('api') || name.includes('backend'))) {
+      return 'backend';
+    } else if ((name.includes('fullstack') || (repo.has_pages && name.includes('app'))) || 
+               (language === 'JavaScript' && name.includes('fullstack'))) {
+      return 'fullstack';
+    } else if (language === 'JavaScript' || language === 'TypeScript' || 
+               topics.includes('react') || topics.includes('nextjs') || topics.includes('frontend')) {
+      return 'frontend';
+    } else if (language === 'Python' || topics.includes('python')) {
+      return 'backend';
+    }
+    
+    return 'frontend'; // default
+  };
+
+  // Функция для получения описания из README
+  const getDescriptionFromReadme = (readme) => {
+    if (!readme) return 'Проект на GitHub без описания';
+    // Парсим README и берем первый параграф
+    const text = atob(readme);
+    const firstParagraph = text.split('\n\n')[0].replace(/^#.*\n/, '').trim();
+    return firstParagraph.length > 150 ? firstParagraph.substring(0, 150) + '...' : firstParagraph;
+  };
+
+  // Загрузка репозиториев с GitHub
+  useEffect(() => {
+    const fetchRepos = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        // Получаем список репозиториев
+        let url = `https://api.github.com/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=30`;
+        
+        const headers = {};
+        if (GITHUB_TOKEN) {
+          headers['Authorization'] = `token ${GITHUB_TOKEN}`;
+        }
+        
+        const response = await fetch(url, { headers });
+        
+        if (!response.ok) {
+          throw new Error(`GitHub API error: ${response.status}`);
+        }
+        
+        const reposData = await response.json();
+        
+        // Фильтруем форки и пустые репозитории
+        const filteredRepos = reposData.filter(repo => 
+          !repo.fork && repo.description !== null
+        );
+        
+        // Получаем README для каждого репозитория (опционально, для более детального описания)
+        const reposWithDetails = filteredRepos.map((repo) => {
+  return {
+    id: repo.id,
+    title: repo.name.replace(/-/g, ' ').replace(/_/g, ' '),
+    shortDescription: repo.description || 'Описание отсутствует',
+    fullDescription: repo.description || 'Подробное описание проекта можно найти на GitHub',
+    category: getProjectCategory(repo),
+    technologies: [repo.language || 'JavaScript', ...(repo.topics || [])].filter(t => t && t !== 'javascript'),
+    image: null,
+    demoLink: repo.homepage,
+    githubLink: repo.html_url,
+    year: new Date(repo.created_at).getFullYear().toString(),
+    featured: repo.stargazers_count > 0,
+    stars: repo.stargazers_count,
+    forks: repo.forks_count,
+    language: repo.language,
+    updated_at: repo.updated_at
+  };
+});
+        
+        setRepos(reposWithDetails);
+      } catch (err) {
+        console.error('Error fetching repos:', err);
+        setError(err.message);
+        // Демо данные на случай ошибки
+        setRepos([
+          {
+            id: 1,
+            title: 'Пример проекта 1',
+            shortDescription: 'Демо проект, замените на реальные данные из GitHub',
+            fullDescription: 'Настройте GITHUB_USERNAME в файле ProjectsPage для получения реальных проектов',
+            category: 'frontend',
+            technologies: ['React', 'Next.js'],
+            demoLink: null,
+            githubLink: 'https://github.com',
+            year: '2024',
+            featured: false
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchRepos();
+  }, []);
 
   // Категории для фильтрации
   const categories = [
-    { id: 'all', name: 'Все проекты' },
-    { id: 'frontend', name: 'Frontend' },
-    { id: 'backend', name: 'Backend' },
-    { id: 'fullstack', name: 'Fullstack' },
-    { id: 'cms', name: 'CMS' },
+    { id: 'all', name: 'Все проекты', icon: '📚' },
+    { id: 'frontend', name: 'Frontend', icon: '🎨' },
+    { id: 'backend', name: 'Backend', icon: '⚙️' },
+    { id: 'fullstack', name: 'Fullstack', icon: '🚀' },
+    { id: 'cms', name: 'CMS', icon: '📝' },
   ];
 
-  const filteredProjects = selectedCategory === 'all' 
-    ? projects 
-    : projects.filter(p => p.category === selectedCategory);
-
-  const featuredProjects = projects.filter(p => p.featured);
+  const filteredProjects = selectedCategory === 'all'
+    ? repos
+    : repos.filter(p => p.category === selectedCategory);
 
   // Компонент карточки проекта
   const ProjectCard = ({ project, isFeatured }) => {
@@ -110,58 +142,52 @@ export default function ProjectsPage() {
 
     return (
       <>
-        <div className={`group bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 ${
+        <div className={`group bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 h-full flex flex-col ${
           isFeatured ? 'ring-2 ring-blue-400 ring-offset-2' : ''
         }`}>
-          {/* Изображение или заглушка */}
-          <div className="relative h-48 overflow-hidden bg-gradient-to-br from-blue-400 to-cyan-500">
-            {project.image ? (
-              <img
-                src={project.image}
-                alt={project.title}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <svg className="w-20 h-20 text-white/30" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M4 4h16v16H4V4zm2 4v10h12V8H6zm2 2h8v6H8v-6z"/>
-                </svg>
+          {/* Цветная полоска сверху по языку */}
+          <div className={`h-2 ${getLanguageColor(project.language)}`}></div>
+          
+          {/* Заголовок и язык */}
+          <div className="p-6 flex-1 flex flex-col">
+            {/* Язык и звезды */}
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${getLanguageColorDot(project.language)}`}></div>
+                <span className="text-xs text-gray-600">{project.language || 'JavaScript'}</span>
               </div>
-            )}
-            
-            {/* Featured badge */}
-            {isFeatured && (
-              <div className="absolute top-3 right-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs px-3 py-1 rounded-full font-semibold shadow-lg">
-                ⭐ Избранное
+              <div className="flex items-center gap-3 text-xs text-gray-500">
+                {project.stars > 0 && (
+                  <span className="flex items-center gap-1">
+                    ⭐ {project.stars}
+                  </span>
+                )}
+                {project.forks > 0 && (
+                  <span className="flex items-center gap-1">
+                    🍴 {project.forks}
+                  </span>
+                )}
               </div>
-            )}
-            
-            {/* Category badge */}
-            <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full">
-              {project.category === 'frontend' && '🎨 Frontend'}
-              {project.category === 'backend' && '⚙️ Backend'}
-              {project.category === 'fullstack' && '🚀 Fullstack'}
-              {project.category === 'cms' && '📝 CMS'}
             </div>
-          </div>
 
-          <div className="p-6">
-            {/* Year */}
-            <div className="text-xs text-blue-600 mb-2">{project.year}</div>
-            
             {/* Title */}
-            <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors">
+            <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors line-clamp-1">
               {project.title}
             </h3>
 
+            {/* Дата обновления */}
+            <div className="text-xs text-gray-400 mb-3">
+              Обновлено: {new Date(project.updated_at).toLocaleDateString('ru-RU')}
+            </div>
+
             {/* Short description */}
-            <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+            <p className="text-gray-600 text-sm mb-4 line-clamp-3 flex-1">
               {project.shortDescription}
             </p>
 
             {/* Technologies */}
             <div className="flex flex-wrap gap-2 mb-4">
-              {project.technologies.map((tech, idx) => (
+              {project.technologies.slice(0, 4).map((tech, idx) => (
                 <span
                   key={idx}
                   className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-md hover:bg-blue-100 hover:text-blue-700 transition-colors"
@@ -169,24 +195,29 @@ export default function ProjectsPage() {
                   {tech}
                 </span>
               ))}
+              {project.technologies.length > 4 && (
+                <span className="text-xs px-2 py-1 bg-gray-100 text-gray-500 rounded-md">
+                  +{project.technologies.length - 4}
+                </span>
+              )}
             </div>
 
             {/* Buttons */}
-            <div className="flex gap-3 pt-3 border-t border-gray-100">
+            <div className="flex gap-3 pt-3 border-t border-gray-100 mt-auto">
               <button
                 onClick={() => setShowDetails(true)}
                 className="flex-1 text-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 text-sm font-medium"
               >
                 Подробнее
               </button>
-              {project.demoLink && (
+              {project.githubLink && (
                 <a
-                  href={project.demoLink}
+                  href={project.githubLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:border-blue-600 hover:text-blue-600 transition-all duration-200 text-sm font-medium"
+                  className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:border-gray-600 hover:text-gray-900 transition-all duration-200 text-sm font-medium flex items-center gap-1"
                 >
-                  Демо
+                  GitHub
                 </a>
               )}
             </div>
@@ -198,7 +229,17 @@ export default function ProjectsPage() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowDetails(false)}>
             <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">{project.title}</h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">{project.title}</h2>
+                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                    <span className="flex items-center gap-1">⭐ {project.stars || 0} звезд</span>
+                    <span className="flex items-center gap-1">🍴 {project.forks || 0} форков</span>
+                    <span className="flex items-center gap-1">
+                      <div className={`w-2 h-2 rounded-full ${getLanguageColorDot(project.language)}`}></div>
+                      {project.language}
+                    </span>
+                  </div>
+                </div>
                 <button
                   onClick={() => setShowDetails(false)}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -222,6 +263,28 @@ export default function ProjectsPage() {
                   {project.fullDescription}
                 </p>
                 
+                <div className="flex gap-3">
+                  {project.githubLink && (
+                    <a
+                      href={project.githubLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 text-center px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                    >
+                      Открыть на GitHub
+                    </a>
+                  )}
+                  {project.demoLink && (
+                    <a
+                      href={project.demoLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 text-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Демо
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -229,6 +292,62 @@ export default function ProjectsPage() {
       </>
     );
   };
+
+  // Вспомогательные функции для цветов языков
+  const getLanguageColor = (language) => {
+    const colors = {
+      'JavaScript': 'bg-yellow-400',
+      'TypeScript': 'bg-blue-500',
+      'Python': 'bg-green-500',
+      'PHP': 'bg-purple-500',
+      'HTML': 'bg-orange-500',
+      'CSS': 'bg-blue-400',
+    };
+    return colors[language] || 'bg-gray-400';
+  };
+
+  const getLanguageColorDot = (language) => {
+    const colors = {
+      'JavaScript': 'bg-yellow-400',
+      'TypeScript': 'bg-blue-500',
+      'Python': 'bg-green-500',
+      'PHP': 'bg-purple-500',
+      'HTML': 'bg-orange-500',
+      'CSS': 'bg-blue-400',
+    };
+    return colors[language] || 'bg-gray-400';
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+          <p className="mt-4 text-gray-600">Загрузка проектов с GitHub...</p>
+          <p className="text-sm text-gray-400 mt-2">Это может занять несколько секунд</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && repos.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-xl">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Ошибка загрузки</h2>
+          <p className="text-gray-600 mb-4">Не удалось загрузить проекты с GitHub</p>
+          <p className="text-sm text-gray-400 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Попробовать снова
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-100 py-20 px-4">
@@ -238,48 +357,13 @@ export default function ProjectsPage() {
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mb-4">
             Мои проекты
           </h1>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Здесь собраны мои лучшие работы. Каждый проект — это решение реальной задачи и новые технологии.
-          </p>
-        </div>
-
-        {/* Избранные проекты */}
-        {selectedCategory === 'all' && featuredProjects.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-              <span>⭐</span> Избранные проекты
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {featuredProjects.map((project) => (
-                <ProjectCard key={project.id} project={project} isFeatured={true} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Фильтры */}
-        <div className="flex flex-wrap justify-center gap-3 mb-12">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`px-6 py-2 rounded-full font-medium transition-all duration-300 flex items-center gap-1 ${
-                selectedCategory === cat.id
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/25 scale-105'
-                  : 'bg-white text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <span>{cat.icon}</span>
-              {cat.name}
-            </button>
-          ))}
         </div>
 
         {/* Сетка проектов */}
         {filteredProjects.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} isFeatured={false} />
+              <ProjectCard key={project.id} project={project} isFeatured={project.featured} />
             ))}
           </div>
         ) : (
@@ -291,16 +375,21 @@ export default function ProjectsPage() {
         {/* Призыв к действию */}
         <div className="text-center mt-16 p-8 bg-white/50 backdrop-blur-sm rounded-2xl">
           <h3 className="text-xl font-semibold text-gray-800 mb-2">
-            Хотите увидеть больше?
+            Все проекты на GitHub
           </h3>
           <p className="text-gray-600 mb-4">
-            Я постоянно создаю новые проекты и улучшаю существующие
+            Посмотреть весь код и другие проекты можно на моём GitHub профиле
           </p>
           <a
-            href="/contact"
-            className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300"
+            href={`https://github.com/Kyr0na`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300"
           >
-            Связаться со мной
+            GitHub Профиль
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.49.5.09.68-.21.68-.48 0-.24-.01-.88-.01-1.72-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02.8-.22 1.65-.33 2.5-.33.85 0 1.7.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85 0 1.34-.01 2.42-.01 2.75 0 .27.18.58.69.48C19.13 20.17 22 16.42 22 12c0-5.52-4.48-10-10-10z"/>
+            </svg>
           </a>
         </div>
       </div>
